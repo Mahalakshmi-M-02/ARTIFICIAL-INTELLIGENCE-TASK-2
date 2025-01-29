@@ -1,0 +1,56 @@
+import speech_recognition as sr
+from transformers import pipeline
+
+def transcribe_audio_using_sr(audio_file=None):
+    """
+    Transcribe audio using the SpeechRecognition library.
+    If audio_file is None, it will capture input from the microphone.
+    """
+    recognizer = sr.Recognizer()
+    
+    if audio_file:
+        with sr.AudioFile(audio_file) as source:
+            print("Processing audio file...")
+            audio = recognizer.record(source)
+    else:
+        with sr.Microphone() as source:
+            print("Please speak into the microphone...")
+            audio = recognizer.listen(source)
+
+    try:
+        text = recognizer.recognize_google(audio)
+        print("Transcription (using SpeechRecognition):", text)
+    except sr.UnknownValueError:
+        print("Speech Recognition could not understand audio.")
+    except sr.RequestError as e:
+        print("Could not request results from Google Speech Recognition service; {0}".format(e))
+
+def transcribe_audio_wav2vec(audio_path):
+    """
+    Transcribe audio using Hugging Face's wav2vec2 model.
+    """
+    # Initialize the pre-trained model
+    transcriber = pipeline("automatic-speech-recognition", model="facebook/wav2vec2-large-960h")
+    
+    # Read the audio file (WAV format is preferable)
+    with open(audio_path, "rb") as audio_file:
+        audio_data = audio_file.read()
+    
+    # Perform transcription
+    transcription = transcriber(audio_data)
+    print("Transcription (using wav2vec2):", transcription['text'])
+
+if __name__ == "__main__":
+    print("Choose transcription method:")
+    print("1. SpeechRecognition (with microphone or audio file)")
+    print("2. Wav2Vec2 (audio file only)")
+    choice = input("Enter your choice (1 or 2): ")
+
+    if choice == "1":
+        audio_input = input("Enter audio file path (leave blank to use microphone): ")
+        transcribe_audio_using_sr(audio_input if audio_input else None)
+    elif choice == "2":
+        audio_file_path = input("Enter the path to a WAV audio file: ")
+        transcribe_audio_wav2vec(audio_file_path)
+    else:
+        print("Invalid choice. Please enter 1 or 2.")
